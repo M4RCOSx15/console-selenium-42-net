@@ -89,4 +89,38 @@ public sealed class BuscaDesafioTest
             && _driver.Url.Contains("q=", StringComparison.OrdinalIgnoreCase),
             $"Navegação inesperada após clicar na sugestão: {_driver.Url}");
     }
+
+    // Exercício 3 — Navegação por Histórico e Botões de Ação
+    [TestMethod]
+    public void NavegacaoHistorico_DeveRestaurarResultadosAposVoltar()
+    {
+        _driver.Navigate().GoToUrl(BaseUrl);
+
+        var campo = CampoPesquisa();
+        campo.SendKeys("Automated Testing");
+        campo.SendKeys(Keys.Enter);
+
+        var primeiroLink = _wait.Until(d =>
+            d.FindElements(By.CssSelector(ResultadosSelector)).FirstOrDefault(e => e.Displayed));
+        Assert.IsNotNull(primeiroLink, "Nenhum link orgânico retornado na busca.");
+        var urlResultados = _driver.Url;
+
+        primeiroLink.Click();
+
+        // O link pode abrir na mesma aba ou em uma nova — cobre os dois casos.
+        _wait.Until(d => d.WindowHandles.Count > 1 || !d.Url.Contains("duckduckgo.com", StringComparison.OrdinalIgnoreCase));
+        if (_driver.WindowHandles.Count > 1)
+            _driver.SwitchTo().Window(_driver.WindowHandles[^1]);
+
+        _wait.Until(d => d.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(
+            _driver.Url.Contains("duckduckgo.com", StringComparison.OrdinalIgnoreCase),
+            $"A página externa não foi carregada: {_driver.Url}");
+
+        _driver.Navigate().Back();
+
+        _wait.Until(d => d.Url.Contains("duckduckgo.com", StringComparison.OrdinalIgnoreCase));
+        AguardarResultados();
+        Assert.AreEqual(urlResultados, _driver.Url, "A página de resultados não foi restaurada corretamente.");
+    }
 }
