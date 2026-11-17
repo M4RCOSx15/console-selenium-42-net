@@ -64,4 +64,29 @@ public sealed class BuscaDesafioTest
             _driver.Title.Contains("Selenium WebDriver", StringComparison.OrdinalIgnoreCase),
             $"Título inesperado da página de resultados: {_driver.Title}");
     }
+
+    // Exercício 2 — Interagindo com o Autocompletar (Suggestions)
+    [TestMethod]
+    public void Autocompletar_DeveNavegarParaResultadosDaTerceiraSugestao()
+    {
+        _driver.Navigate().GoToUrl(BaseUrl);
+
+        CampoPesquisa().SendKeys("C# unit testing");
+
+        // Espera explícita pela lista dinâmica de sugestões do autocompletar.
+        var sugestoes = _wait.Until(d =>
+        {
+            var itens = d.FindElements(By.CssSelector(
+                "[role='option'], .sbox-suggestions li, .search-suggestions-list li, .searchbox_suggestion"));
+            return itens.Count >= 3 ? itens : null;
+        });
+
+        sugestoes[2].Click();
+
+        AguardarResultados();
+        Assert.IsTrue(
+            _driver.Url.Contains("duckduckgo.com", StringComparison.OrdinalIgnoreCase)
+            && _driver.Url.Contains("q=", StringComparison.OrdinalIgnoreCase),
+            $"Navegação inesperada após clicar na sugestão: {_driver.Url}");
+    }
 }
